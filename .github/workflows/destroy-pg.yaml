@@ -1,4 +1,4 @@
-name: Start a postgres database
+name: Delete the postgres database
 on:
   workflow_dispatch:
 
