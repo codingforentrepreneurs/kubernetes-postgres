@@ -1,0 +1,24 @@
+name: Verify Kubectl Service Account
+on:
+  workflow_dispatch:
+
+jobs:
+  verify_sa:
+    name: Verify K8s Service Account
+    runs-on: ubuntu-latest
+    steps:
+      # need kubectl
+      - uses: azure/setup-kubectl@v3
+      - name: Verify the `.kube` dir
+        run: mkdir -p ~/.kube
+      - name: Add our SA K8s Config
+        run: |
+          cat << EOF > ~/.kube/kubeconfig.yaml
+          ${{ secrets.KUBECONFIG_SA }}
+          EOF
+      - name: Echo Pods
+        run: |
+          KUBECONFIG=~/.kube/kubeconfig.yaml kubectl get pods
+      - name: Echo Deployments
+        run: |
+          KUBECONFIG=~/.kube/kubeconfig.yaml kubectl get deployments
