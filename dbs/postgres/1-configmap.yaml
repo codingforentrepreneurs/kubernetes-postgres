@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-cm
+  namespace: apps
+  labels:
+    app: postgres-cm
+data:
+  POSTGRES_DB: cfedb
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: cfepasswordtest

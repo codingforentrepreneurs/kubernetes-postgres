@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: psql-pod
+spec:
+  containers:
+    - name: psql-container
+      image: jbergknoff/postgresql-client:latest # psql 6mb
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c", "--"]
+      args: ["while true; do sleep 30; done;"]
+      env:
+        # - name: DATABASE_URL
+        #   value: postgres://username:password@postgres-lb-service.apps.svc.cluster.local/cfedb
+        - name: PGHOST
+          value: postgres-lb-service.apps.svc.cluster.local
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-cm
+              key: POSTGRES_USER
+        - name: PGPASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-cm
+              key: POSTGRES_PASSWORD
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-cm
+              key: POSTGRES_DB
+      # envFrom:
+      #   - configMapRef:
+      #       name: postgres-cm

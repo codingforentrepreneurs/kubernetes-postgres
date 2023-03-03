@@ -1,0 +1,22 @@
+name: Start a postgres database
+on:
+  workflow_dispatch:
+
+jobs:
+  verify_sa:
+    name: Start Postgres StatefulSet
+    runs-on: ubuntu-latest
+    steps:
+      # need kubectl
+      - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+      - name: Verify the `.kube` dir
+        run: mkdir -p ~/.kube
+      - name: Add our SA K8s Config
+        run: |
+          cat << EOF > ~/.kube/kubeconfig.yaml
+          ${{ secrets.KUBECONFIG_SA }}
+          EOF
+      - name: Delete Changes
+        run: |
+          KUBECONFIG=~/.kube/kubeconfig.yaml kubectl delete -f dbs/postgres

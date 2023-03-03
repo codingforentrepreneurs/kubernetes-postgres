@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-statefulset
+  namespace: apps
+  labels:
+    app: postgres-statefulset
+spec:
+  replicas: 1
+  serviceName: postgres-service
+  selector:
+    matchLabels:
+      app: postgres-statefulset
+  template:
+    metadata:
+      labels:
+        app: postgres-statefulset
+    spec:
+      containers:
+        - name: postgres-container
+          image: postgres:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres-port
+              containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-cm
+          volumeMounts:
+            - name: postgres-db-vol
+              mountPath: /var/lib/postgresql/data
+      initContainers:
+        - name: delete-existing-data
+          image: alpine:latest
+          command: ["sh", "-c", "rm -rf /mnt/*"]
+          volumeMounts:
+            - name: postgres-db-vol
+              mountPath: /mnt
+      volumes:
+         - name: postgres-db-vol
+           persistentVolumeClaim: 
+              claimName: postgres-pvc

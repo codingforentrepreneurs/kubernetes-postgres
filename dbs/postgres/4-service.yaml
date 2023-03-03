@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-lb-service
+  namespace: apps
+  labels:
+    app: postgres-lb-service
+  
+spec:
+  type: ClusterIP # 
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: postgres-port
+  selector:
+    app: postgres-statefulset
+
+# postgres-lb-service.apps.svc.cluster.local
