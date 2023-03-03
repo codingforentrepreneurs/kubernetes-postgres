@@ -35,11 +35,11 @@ terraform apply
 Create the service account:
 
 ```
-kubectl create namespace
+kubectl create namespace apps
 kubectl create serviceaccount github-actions-sa -n apps
 ```
 
-A shortcut directly from [the blog post](https://www.codingforentrepreneurs.com/blog/kubernetes-rbac-service-account-github-actions/), create a role/rolebinding manifest (e.g `~/dev/tf-k8s-admin/service-accounts/role-binding.yaml` with
+A shortcut directly from [the blog post](https://www.codingforentrepreneurs.com/blog/kubernetes-rbac-service-account-github-actions/), create a role/rolebinding manifest (e.g `~/dev/tf-k8s-admin/service-accounts/role-binding.yaml`) with
 ```yaml 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -108,8 +108,8 @@ export SERVICE_ACCOUNT="github-actions-sa"
 export SERVICE_ACCOUNT_NAMESPACE="apps"
 export SERVICE_ACCOUNT_SECRET_NAME=$(kubectl get serviceaccounts $SERVICE_ACCOUNT -n $SERVICE_ACCOUNT_NAMESPACE -o jsonpath="{.secrets[0].name}")
 
-export SERVICE_ACCOUNT_SECRET_CERT=$(kubectl get secret $SERVICE_ACCOUNT_SECRET_NAME -o jsonpath="{.data['ca\.crt']}")
-export SERVICE_ACCOUNT_SECRET_TOKEN=$(kubectl get secret $SERVICE_ACCOUNT_SECRET_NAME -o jsonpath="{.data.token}" | base64 -d)
+export SERVICE_ACCOUNT_SECRET_CERT=$(kubectl get secret $SERVICE_ACCOUNT_SECRET_NAME -n $SERVICE_ACCOUNT_NAMESPACE -o jsonpath="{.data['ca\.crt']}")
+export SERVICE_ACCOUNT_SECRET_TOKEN=$(kubectl get secret $SERVICE_ACCOUNT_SECRET_NAME -n $SERVICE_ACCOUNT_NAMESPACE  -o jsonpath="{.data.token}" | base64 -d)
 export CLUSTER_URL=$(kubectl config view --minify -o 'jsonpath={.clusters[0].cluster.server}')
 export CLUSTER_NAME=$(kubectl config view --minify -o 'jsonpath={.clusters[0].name}')
 ```
