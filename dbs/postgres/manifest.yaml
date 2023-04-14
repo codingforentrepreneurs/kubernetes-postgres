@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-cm
+  namespace: apps
+  labels:
+    app: postgres-cm
+data:
+  POSTGRES_DB: cfedb
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: cfepasswordtest
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: apps
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1G
+  storageClassName: linode-block-storage # linode-block-storage-retain
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-statefulset
+  namespace: apps
+  labels:
+    app: postgres-statefulset
+spec:
+  replicas: 1
+  serviceName: postgres-service
+  selector:
+    matchLabels:
+      app: postgres-statefulset
+  template:
+    metadata:
+      labels:
+        app: postgres-statefulset
+    spec:
+      containers:
+        - name: postgres-container
+          image: postgres:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres-port
+              containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-cm
+          volumeMounts:
+            - name: postgres-db-vol
+              mountPath: /var/lib/postgresql/data
+      initContainers:
+        - name: delete-existing-data
+          image: alpine:latest
+          command: ["sh", "-c", "rm -rf /mnt/*"]
+          volumeMounts:
+            - name: postgres-db-vol
+              mountPath: /mnt
+      volumes:
+         - name: postgres-db-vol
+           persistentVolumeClaim: 
+              claimName: postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-lb-service
+  namespace: apps
+  labels:
+    app: postgres-lb-service
+  
+spec:
+  type: ClusterIP # 
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: postgres-port
+  selector:
+    app: postgres-statefulset
+
+# postgres-lb-service.apps.svc.cluster.local
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: psql-pod
+spec:
+  containers:
+    - name: psql-container
+      image: jbergknoff/postgresql-client:latest # psql 6mb
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c", "--"]
+      args: ["while true; do sleep 30; done;"]
+      env:
+        # - name: DATABASE_URL
+        #   value: postgres://username:password@postgres-lb-service.apps.svc.cluster.local/cfedb
+        - name: PGHOST
+          value: postgres-lb-service.apps.svc.cluster.local
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-cm
+              key: POSTGRES_USER
+        - name: PGPASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-cm
+              key: POSTGRES_PASSWORD
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-cm
+              key: POSTGRES_DB
+      # envFrom:
+      #   - configMapRef:
+      #       name: postgres-cm
