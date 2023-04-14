@@ -82,5 +82,5 @@ spec:
     app: postgres-statefulset
 
 # postgres://username@pgpassword:postgres-lb-service.default.svc.cluster.local/dbname
-# kubectl port-forward svc/postgres-service 5432:5432
-# PGPASSWORD=pgpassword psql -h localhost:5432 -U username -d dbname
+# kubectl port-forward svc/postgres-service 5430:5432
+# PGPASSWORD=pgpassword psql -h localhost -p 5430 -U username -d dbname
