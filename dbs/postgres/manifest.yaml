@@ -2,20 +2,18 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-cm
-  namespace: apps
   labels:
     app: postgres-cm
 data:
-  POSTGRES_DB: cfedb
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: cfepasswordtest
+  POSTGRES_DB: dbname
+  POSTGRES_USER: username
+  POSTGRES_PASSWORD: pgpassword
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
-  namespace: apps
 spec:
   accessModes:
     - ReadWriteOnce
@@ -29,7 +27,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres-statefulset
-  namespace: apps
   labels:
     app: postgres-statefulset
 spec:
@@ -72,11 +69,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-lb-service
-  namespace: apps
+  name: postgres-service
   labels:
-    app: postgres-lb-service
-  
+    app: postgres-service
 spec:
   type: ClusterIP # 
   ports:
@@ -86,40 +81,6 @@ spec:
   selector:
     app: postgres-statefulset
 
-# postgres-lb-service.apps.svc.cluster.local
-
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: psql-pod
-spec:
-  containers:
-    - name: psql-container
-      image: jbergknoff/postgresql-client:latest # psql 6mb
-      imagePullPolicy: IfNotPresent
-      command: ["sh", "-c", "--"]
-      args: ["while true; do sleep 30; done;"]
-      env:
-        # - name: DATABASE_URL
-        #   value: postgres://username:password@postgres-lb-service.apps.svc.cluster.local/cfedb
-        - name: PGHOST
-          value: postgres-lb-service.apps.svc.cluster.local
-        - name: PGUSER
-          valueFrom:
-            configMapKeyRef:
-              name: postgres-cm
-              key: POSTGRES_USER
-        - name: PGPASSWORD
-          valueFrom:
-            configMapKeyRef:
-              name: postgres-cm
-              key: POSTGRES_PASSWORD
-        - name: PGDATABASE
-          valueFrom:
-            configMapKeyRef:
-              name: postgres-cm
-              key: POSTGRES_DB
-      # envFrom:
-      #   - configMapRef:
-      #       name: postgres-cm
+# postgres://username@pgpassword:postgres-lb-service.default.svc.cluster.local/dbname
+# kubectl port-forward svc/postgres-service 5432:5432
+# PGPASSWORD=pgpassword psql -h localhost:5432 -U username -d dbname
